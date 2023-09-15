@@ -1,7 +1,7 @@
 import * as utils from './utils';
 
 // get from whatever version of react native that is being used.
-const AsyncStorage = require('@react-native-community/async-storage') || {};
+const AsyncStorage = require('@react-native-async-storage/async-storage') || {};
 
 const storage = {
   setItem(key, value) {
@@ -38,8 +38,7 @@ class Cache {
   }
 
   read(language, namespace, callback) {
-    const store = {};
-    const nowMS = new Date().getTime();
+    const nowMS = Date.now();
 
     if (!AsyncStorage) {
       return callback(null, null);
@@ -56,9 +55,10 @@ class Cache {
             // there should be no language version set, or if it is, it should match the one in translation
             this.options.versions[language] === local.i18nVersion
           ) {
+            const i18nStamp = local.i18nStamp;
             delete local.i18nVersion;
             delete local.i18nStamp;
-            return callback(null, local);
+            return callback(null, local, i18nStamp);
           }
         }
 
@@ -72,7 +72,7 @@ class Cache {
 
   save(language, namespace, data) {
     if (AsyncStorage) {
-      data.i18nStamp = new Date().getTime();
+      data.i18nStamp = Date.now();
 
       // language version (if set)
       if (this.options.versions[language]) {
@@ -82,6 +82,10 @@ class Cache {
       // save
       storage.setItem(`${this.options.prefix}${language}-${namespace}`, JSON.stringify(data));
     }
+  }
+
+  getVersion (language) {
+    return this.options.versions[language] || this.options.defaultVersion;
   }
 }
 
